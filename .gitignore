@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.pyc
+*.pyo
+
+# virtual env
+.venv/
+venv/
+
+# mac
+.DS_Store
+
+# data
+data/
+datasets/
+
+# logs
+*.log
+
+# docker
+*.db
