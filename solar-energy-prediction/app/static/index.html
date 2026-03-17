@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar Panel Output Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --line: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #f59e0b;
+      --green: #22c55e;
+      --blue: #38bdf8;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.1;
+    }
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+    .controls, .stats {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .controls {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      align-items: end;
+    }
+    .stats {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .card {
+      background: rgba(17, 24, 39, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    input, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: #0b1220;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: #111827;
+      font-weight: 700;
+      border: 0;
+    }
+    button.secondary {
+      background: #1d4ed8;
+      color: white;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat-value {
+      margin-top: 8px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .chart-box {
+      height: 320px;
+    }
+    .chart-box.small {
+      height: 260px;
+    }
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>Solar Panel Output Dashboard</h1>
+        <p>Historical + realtime + 3-day forecast from Open-Meteo/VEDAS at 15-minute resolution.</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="card">
+        <label for="lat">Latitude</label>
+        <input id="lat" type="number" step="0.0001" value="22.25">
+      </div>
+      <div class="card">
+        <label for="lon">Longitude</label>
+        <input id="lon" type="number" step="0.0001" value="72.74">
+      </div>
+      <div class="card">
+        <label for="hours">Window</label>
+        <input id="hours" type="number" step="1" min="24" max="720" value="240">
+      </div>
+      <div class="card">
+        <label>&nbsp;</label>
+        <button id="refreshBtn" type="button">Update Forecast</button>
+      </div>
+      <div class="card">
+        <label>&nbsp;</label>
+        <button id="loadBtn" class="secondary" type="button">Reload Graphs</button>
+      </div>
+    </div>
+
+    <div class="status" id="status">Loading data…</div>
+
+    <div class="stats" id="stats">
+      <div class="card"><div class="stat-label">Latest Power</div><div class="stat-value" id="latestPower">-</div></div>
+      <div class="card"><div class="stat-label">Latest GHI</div><div class="stat-value" id="latestGhi">-</div></div>
+      <div class="card"><div class="stat-label">Latest Temperature</div><div class="stat-value" id="latestTemp">-</div></div>
+      <div class="card"><div class="stat-label">Latest Cloud Cover</div><div class="stat-value" id="latestCloud">-</div></div>
+    </div>
+
+    <div class="charts">
+      <div class="card">
+        <h2 class="section-title">Solar Output</h2>
+        <div class="chart-box"><canvas id="powerChart"></canvas></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="section-title">Irradiance</h2>
+          <div class="chart-box small"><canvas id="irradianceChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Temperature</h2>
+          <div class="chart-box small"><canvas id="temperatureChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="section-title">Cloud Cover</h2>
+          <div class="chart-box small"><canvas id="cloudChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Wind Speed</h2>
+          <div class="chart-box small"><canvas id="windChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Pressure</h2>
+        <div class="chart-box small"><canvas id="pressureChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const charts = {};
+
+    function chartOptions(yLabel) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            type: 'time',
+            time: { unit: 'hour' },
+            ticks: { color: '#94a3b8' },
+            grid: { color: 'rgba(148,163,184,0.08)' }
+          },
+          y: {
+            ticks: { color: '#94a3b8' },
+            grid: { color: 'rgba(148,163,184,0.08)' },
+            title: { display: true, text: yLabel, color: '#94a3b8' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#e5e7eb' } }
+        }
+      };
+    }
+
+    function upsertChart(id, config) {
+      if (charts[id]) {
+        charts[id].data = config.data;
+        charts[id].options = config.options;
+        charts[id].update();
+        return;
+      }
+      const ctx = document.getElementById(id);
+      charts[id] = new Chart(ctx, config);
+    }
+
+    function series(rows, key) {
+      return rows.map(row => ({ x: row.timestamp, y: row[key] }));
+    }
+
+    async function fetchJson(url, options) {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Request failed: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function updateForecast() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      const status = document.getElementById('status');
+      status.textContent = 'Updating forecast…';
+      await fetchJson(`/api/predict?lat=${lat}&lon=${lon}`);
+      status.textContent = 'Forecast updated. Reloading graphs…';
+      await loadGraphs();
+    }
+
+    async function loadGraphs() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      const hours = document.getElementById('hours').value;
+      const status = document.getElementById('status');
+      status.textContent = 'Loading graphs…';
+
+      const payload = await fetchJson(`/api/predictions?lat=${lat}&lon=${lon}&hours=${hours}`);
+      const rows = payload.rows || [];
+
+      if (!rows.length) {
+        status.textContent = 'No rows available yet. Click "Update Forecast".';
+        return;
+      }
+
+      const latest = rows[rows.length - 1];
+      document.getElementById('latestPower').textContent = `${latest.predicted_power_kw.toFixed(2)} kW`;
+      document.getElementById('latestGhi').textContent = `${latest.global_horizontal_irradiance.toFixed(0)} W/m²`;
+      document.getElementById('latestTemp').textContent = `${latest.temperature_2m.toFixed(1)} °C`;
+      document.getElementById('latestCloud').textContent = `${latest.cloud_cover.toFixed(0)} %`;
+
+      upsertChart('powerChart', {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'Predicted Power (kW)', data: series(rows, 'predicted_power_kw'), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', tension: 0.25, pointRadius: 0, borderWidth: 2 },
+            { label: 'Baseline (kW)', data: series(rows, 'baseline_power_kw'), borderColor: '#22c55e', tension: 0.2, pointRadius: 0, borderWidth: 1.5 }
+          ]
+        },
+        options: chartOptions('kW')
+      });
+
+      upsertChart('irradianceChart', {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'GHI', data: series(rows, 'global_horizontal_irradiance'), borderColor: '#22c55e', tension: 0.2, pointRadius: 0, borderWidth: 2 },
+            { label: 'GTI', data: series(rows, 'global_tilted_irradiance'), borderColor: '#facc15', tension: 0.2, pointRadius: 0, borderWidth: 2 }
+          ]
+        },
+        options: chartOptions('W/m²')
+      });
+
+      upsertChart('temperatureChart', {
+        type: 'line',
+        data: { datasets: [{ label: 'Temperature', data: series(rows, 'temperature_2m'), borderColor: '#ef4444', tension: 0.2, pointRadius: 0, borderWidth: 2 }] },
+        options: chartOptions('°C')
+      });
+
+      upsertChart('cloudChart', {
+        type: 'line',
+        data: { datasets: [{ label: 'Cloud Cover', data: series(rows, 'cloud_cover'), borderColor: '#38bdf8', tension: 0.2, pointRadius: 0, borderWidth: 2 }] },
+        options: chartOptions('%')
+      });
+
+      upsertChart('windChart', {
+        type: 'line',
+        data: { datasets: [{ label: 'Wind Speed', data: series(rows, 'wind_speed_10m'), borderColor: '#a78bfa', tension: 0.2, pointRadius: 0, borderWidth: 2 }] },
+        options: chartOptions('m/s')
+      });
+
+      upsertChart('pressureChart', {
+        type: 'line',
+        data: { datasets: [{ label: 'Pressure', data: series(rows, 'pressure'), borderColor: '#f97316', tension: 0.2, pointRadius: 0, borderWidth: 2 }] },
+        options: chartOptions('hPa')
+      });
+
+      status.textContent = `Showing ${rows.length} points at 15-minute intervals for ${lat}, ${lon}. Auto-refresh every 30 seconds.`;
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', updateForecast);
+    document.getElementById('loadBtn').addEventListener('click', loadGraphs);
+
+    updateForecast().catch(async (error) => {
+      document.getElementById('status').textContent = `Update failed: ${error.message}. Trying to load stored data…`;
+      await loadGraphs();
+    });
+
+    setInterval(loadGraphs, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# ==============================================================================
+# .dockerignore — Files to exclude from Docker build context
+# ==============================================================================
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+
+# Virtual environments
+venv
+.venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+
+# Tests (not needed in production image)
+tests/
+
+# Documentation
+*.md
+!README.md
+!requirements.txt
+
+# Models (mounted via volume)
+models/
+data/

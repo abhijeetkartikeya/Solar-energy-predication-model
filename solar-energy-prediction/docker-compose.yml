@@ -1,0 +1,80 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg14-latest
+    container_name: solar_timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-solar}
+      POSTGRES_USER: ${POSTGRES_USER:-solar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solar123}
+    ports:
+      - "55432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-solar} -d ${POSTGRES_DB:-solar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: solar_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: solar_api
+    restart: unless-stopped
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-solar}
+      POSTGRES_USER: ${POSTGRES_USER:-solar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solar123}
+      DEFAULT_LATITUDE: ${DEFAULT_LATITUDE:-22.5726}
+      DEFAULT_LONGITUDE: ${DEFAULT_LONGITUDE:-88.3639}
+      DEFAULT_PANEL_AREA_M2: ${DEFAULT_PANEL_AREA_M2:-16.0}
+      DEFAULT_PANEL_EFFICIENCY: ${DEFAULT_PANEL_EFFICIENCY:-0.20}
+      DEFAULT_TEMPERATURE_COEFFICIENT: ${DEFAULT_TEMPERATURE_COEFFICIENT:-0.004}
+      DEFAULT_NOCT_C: ${DEFAULT_NOCT_C:-45.0}
+      DEFAULT_INVERTER_EFFICIENCY: ${DEFAULT_INVERTER_EFFICIENCY:-0.96}
+      DEFAULT_CAPACITY_KW: ${DEFAULT_CAPACITY_KW:-3.5}
+      DEFAULT_PANEL_TILT: ${DEFAULT_PANEL_TILT:-22.0}
+      DEFAULT_PANEL_AZIMUTH: ${DEFAULT_PANEL_AZIMUTH:-180.0}
+      SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-15}
+      VEDAS_API_BASE_URL: ${VEDAS_API_BASE_URL:-}
+      VEDAS_API_KEY: ${VEDAS_API_KEY:-}
+      MODEL_DIR: /app/artifacts/models
+    ports:
+      - "8000:8000"
+    volumes:
+      - model_artifacts:/app/artifacts
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+volumes:
+  timescaledb_data:
+  grafana_data:
+  model_artifacts:

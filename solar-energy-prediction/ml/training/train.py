@@ -1,10 +1,5 @@
-import pandas as pd
+"""Backward-compatible wrapper for the renamed training module."""
 
-# Load data
-df = pd.read_csv("ml/data/raw/solar_training_5000.csv")
+from ml.training.train_model import build_model_key, train_model
 
-# ✅ Fix timestamp column
-df.rename(columns={"Unnamed: 0": "timestamp"}, inplace=True)
-df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-# Continue processing...
+__all__ = ["build_model_key", "train_model"]

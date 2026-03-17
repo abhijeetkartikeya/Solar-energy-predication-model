@@ -1,0 +1,324 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "kwatt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS \"time\",\n  predicted_power_kw::double precision AS \"Predicted Power (kW)\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Historical + Forecast Power",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "wattm2"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS \"time\", global_horizontal_irradiance::double precision AS \"GHI\", global_tilted_irradiance::double precision AS \"GTI\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Solar Irradiance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS \"time\", temperature_2m::double precision AS \"Temperature (C)\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperature",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS \"time\", cloud_cover::double precision AS \"Cloud Cover (%)\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Cloud Cover",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "velocityms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 17
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS \"time\", wind_speed_10m::double precision AS \"Wind Speed (m/s)\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Wind Speed",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "TimescaleDB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pressurehpa"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "TimescaleDB"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS \"time\", pressure::double precision AS \"Pressure (hPa)\"\nFROM solar_power_predictions\nWHERE $__timeFilter(timestamp)\n  AND latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude)\n  AND longitude = COALESCE(NULLIF('${longitude}', '')::double precision, longitude)\nORDER BY timestamp;",
+          "refId": "A"
+        }
+      ],
+      "title": "Pressure",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "22.25",
+          "value": "22.25"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "TimescaleDB"
+        },
+        "definition": "SELECT DISTINCT latitude::text FROM solar_power_predictions ORDER BY 1;",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Latitude",
+        "multi": false,
+        "name": "latitude",
+        "options": [],
+        "query": "SELECT DISTINCT latitude::text FROM solar_power_predictions ORDER BY 1;",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "72.74",
+          "value": "72.74"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "TimescaleDB"
+        },
+        "definition": "SELECT DISTINCT longitude::text FROM solar_power_predictions WHERE latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude) ORDER BY 1;",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Longitude",
+        "multi": false,
+        "name": "longitude",
+        "options": [],
+        "query": "SELECT DISTINCT longitude::text FROM solar_power_predictions WHERE latitude = COALESCE(NULLIF('${latitude}', '')::double precision, latitude) ORDER BY 1;",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-10d",
+    "to": "now+3d"
+  },
+  "title": "Solar Energy Forecast",
+  "uid": "solar-energy-forecast",
+  "version": 2
+}
